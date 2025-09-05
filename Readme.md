@@ -1,14 +1,20 @@
 # GeoDataViz: Geological Drillhole Data Analyzer
 
+Author: Ghozian Islam Karami 
+
+Senior Geologist & Geospatial Specialist passionate about building open-source solutions to solve challenges in the mining industry.
+
+Contact: ghoziankarami@gmail.com | [Linkedin](https://www.linkedin.com/in/ghoziankarami/)
+
 ## Overview
 
 **GeoDataViz** is a comprehensive, interactive web application built with R Shiny, designed as an all-in-one workbench for geologists, data analysts, and students. It transforms raw drillhole data (collar, assay, lithology) into actionable geological insights through powerful visualization, robust statistical analysis, and interactive data validation tools.
 
-Developed by a Senior Geologist for both educational and professional use, this application provides an open-source solution for the entire initial data analysis workflow, from data loading and cleaning to advanced QA/QC, without the need for proprietary software.
+Developed for both educational and professional use, this application provides an open-source solution for the entire initial data analysis workflow, from data loading and cleaning to advanced QA/QC, without the need for proprietary software.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](https://www.google.com/search?q=LICENSE "null") file for details.
+This project is licensed under the MIT License. See the [LICENSE](https://github.com/ghoziankarami/GeoDataViz/blob/main/LICENSE.md) file for details.
 
 ## Target Audience
 
