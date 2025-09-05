@@ -353,7 +353,7 @@ ui <- fluidPage(
                        column(8,
                               h3("About GeoDataViz"),
                               p(strong("GeoDataViz"), " is a comprehensive, interactive web application built with R Shiny, designed as an all-in-one workbench for geologists, data analysts, and students. It transforms raw drillhole data into actionable geological insights through powerful visualization and robust statistical analysis."),
-                              p("Developed by a Senior Geologist for both educational and professional use, this application provides an open-source solution for the entire initial data analysis workflow, from data loading to advanced geostatistical QA/QC, without the need for proprietary software."),
+                              p("Developed by a Senior Geologist for both educational and professional use, this application provides an open-source solution for the entire initial data analysis workflow, from data loading to advanced QA/QC, without the need for proprietary software."),
                               hr(),
                               
                               h3("License"),

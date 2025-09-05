@@ -4,7 +4,7 @@
 
 **GeoDataViz** is a comprehensive, interactive web application built with R Shiny, designed as an all-in-one workbench for geologists, data analysts, and students. It transforms raw drillhole data (collar, assay, lithology) into actionable geological insights through powerful visualization, robust statistical analysis, and interactive data validation tools.
 
-Developed by a Senior Geologist for both educational and professional use, this application provides an open-source solution for the entire initial data analysis workflow, from data loading and cleaning to advanced geostatistical QA/QC, without the need for proprietary software.
+Developed by a Senior Geologist for both educational and professional use, this application provides an open-source solution for the entire initial data analysis workflow, from data loading and cleaning to advanced QA/QC, without the need for proprietary software.
 
 ## License
 
