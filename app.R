@@ -1,18 +1,14 @@
 # app.R
-# Version 17.2: "Citation & Documentation Update"
+# Version 1.0.1: "Bug Fix Release"
 # Author: Ghozian Islam Karami
 #
-# Changelog v17.2:
-# - ENHANCEMENT (About Tab): Updated the "About" tab to include detailed
-#   License and Citation information (Plain Text and BibTeX formats) as provided.
+# Changelog v1.0.1:
+# - BUG FIX (Drillhole Map): Re-implemented and fixed the discrete color scale
+#   functionality on the drillhole location map. The feature now correctly
+#   categorizes data and displays points as expected.
 #
-# Changelog v17.1:
-# - BUG FIX (Lithology Colors): Fixed a CSS typo that prevented color swatch rendering.
-#
-# Changelog v17.0:
-# - SIMPLIFICATION: Removed all survey data functionality.
-# - ENHANCEMENT (Validation): Added Assay-missing-Collar validation check.
-
+# Changelog v1.0.0:
+# - OFFICIAL RELEASE: First stable, public release of GeoDataViz.
 
 # --- 1. Load Libraries ---
 library(shiny)
@@ -42,14 +38,12 @@ sample_lithology <- read.csv("lithology.csv")
 
 # --- Helper functions for ggpairs plot ---
 
-# Upper panel: Scatter plot with a linear regression line
 custom_scatter_with_lm <- function(data, mapping, ...) {
   ggplot(data = data, mapping = mapping) +
     geom_point(color = "blue", alpha = 0.5) +
     geom_smooth(method = "lm", se = FALSE, color = "red", ...)
 }
 
-# Lower panel: Display calculated R-squared value
 custom_r_squared_text <- function(data, mapping, ...) {
   x_col <- GGally::eval_data_col(data, mapping$x)
   y_col <- GGally::eval_data_col(data, mapping$y)
@@ -79,7 +73,7 @@ ui <- fluidPage(
     style = "position: relative; min-height: 100vh;",
     div(style="padding-bottom: 50px;",
         navbarPage(
-          "GeoDataViz v17.2", 
+          "GeoDataViz v1.0.1", 
           
           # Tab 1: Data Input & Integration
           tabPanel("Data Input & Integration",
@@ -93,7 +87,7 @@ ui <- fluidPage(
                                     selected = "sample"),
                        hr(),
                        conditionalPanel(
-                         condition = "input.dataSource == 'upload'",
+                         condition = "input$dataSource == 'upload'",
                          h3("2. Upload Files"),
                          selectInput("inputType", "Select Input Format:",
                                      choices = c("Excel (Single File)" = "excel",
@@ -119,11 +113,6 @@ ui <- fluidPage(
                      ),
                      mainPanel(
                        width = 8,
-                       h3("About GeoDataViz"),
-                       p(strong("GeoDataViz"), " is a comprehensive, interactive web application built with R Shiny, designed as an all-in-one workbench for geologists, data analysts, and students. It transforms raw drillhole data into actionable geological insights through powerful visualization and robust statistical analysis."),
-                       p("Developed by a Senior Geologist for both educational and professional use, this application provides an open-source solution for the entire initial data analysis workflow, from data loading to advanced QA/QC, without the need for proprietary software."),
-                       hr(),
-                       
                        wellPanel(
                          style = "background-color: #f0f8ff;",
                          h3("Data Security is a Priority"),
@@ -188,7 +177,7 @@ ui <- fluidPage(
                        column(4,
                               h4("Assays Missing Collar Data"),
                               p("Hole IDs in Assay file, but not in Collar file."),
-                              DTOutput("missingCollarTable") # UI baru
+                              DTOutput("missingCollarTable")
                        )
                      ),
                      hr(),
@@ -215,19 +204,20 @@ ui <- fluidPage(
                        selectInput("scale_type", "Color Scale Type:",
                                    choices = c("Continuous" = "continuous", "Discrete" = "discrete")),
                        conditionalPanel(
-                         condition = "input.scale_type == 'continuous'",
+                         condition = "input$scale_type == 'continuous'",
                          selectInput("continuous_palette", "Continuous Color Scale:",
                                      choices = c("Viridis", "Plasma", "Inferno", "Magma", "Cividis"),
                                      selected = "Viridis")
                        ),
                        conditionalPanel(
-                         condition = "input.scale_type == 'discrete'",
-                         hr(),
-                         h5("Set Intervals & Colors (Discrete)"),
-                         textInput("manual_breaks", "Enter Upper Interval Breaks (comma-separated)", placeholder = "e.g., 1, 1.5, 2"),
-                         uiOutput("discretePaletteUI"),
-                         hr(),
-                         uiOutput("intervalFilterUI") 
+                         condition = "input$scale_type == 'discrete'",
+                         selectInput("discrete_palette", "Discrete Color Palette:",
+                                     choices = list(
+                                       "Sequential" = c("YlOrRd", "YlGnBu", "Blues", "Greens", "Reds"),
+                                       "Diverging" = c("RdYlBu", "BrBG", "PiYG"),
+                                       "Qualitative" = c("Set1", "Set2", "Paired")
+                                     ), selected = "YlOrRd"),
+                         textInput("manual_breaks", "Enter Upper Interval Breaks (comma-separated)", placeholder = "e.g., 1, 1.5, 2")
                        )
                      ),
                      mainPanel(
@@ -338,9 +328,7 @@ ui <- fluidPage(
                        helpText("Select a lithology to change its color, then pick a new color. The change is applied automatically."),
                        hr(),
                        uiOutput("selectLithoToColorUI"),
-                       uiOutput("pickNewColorUI"),
-                       hr(),
-                       uiOutput("copyLithoColorUI")
+                       uiOutput("pickNewColorUI")
                      ),
                      mainPanel(
                        width = 8,
@@ -351,34 +339,39 @@ ui <- fluidPage(
           ),
           
           # Tab 7: About
-          ## ## PERUBAHAN: Konten tab About diperbarui
           tabPanel("About",
                    fluidPage(
                      fluidRow(
                        column(8,
-                        
+                              h3("About GeoDataViz"),
+                              p(strong("GeoDataViz"), " is a comprehensive, interactive web application built with R Shiny, designed as an all-in-one workbench for geologists, data analysts, and students. It transforms raw drillhole data into actionable geological insights through powerful visualization and robust statistical analysis."),
+                              p("Developed by a Senior Geologist for both educational and professional use, this application provides an open-source solution for the entire initial data analysis workflow, from data loading to advanced geostatistical QA/QC, without the need for proprietary software."),
+                              hr(),
+                              
                               h3("License"),
                               p("This project is licensed under the MIT License. Source code is available on ", tags$a(href="https://github.com/ghoziankarami/GeoDataViz/", target="_blank", "GitHub.")),
                               hr(),
                               
                               h3("Citation"),
-                              p("If you use GeoDataViz in your research, publication, or report, please cite it as follows. Your citation is the best way to support the development of this open-source tool."),
+                              p("If you use GeoDataViz in your research, publication, or report, please support this open-source project by citing it. The official DOI for this software is provided by Zenodo."),
                               
-                              h4("Plain Text:"),
-                              tags$pre(
-                                "Karami, G. (2025). GeoDataViz: A comprehensive workbench for geological drillhole data analysis. GitHub Repository. https://github.com/ghoziankarami/GeoDataViz"
+                              h4("Preferred Format (Zenodo):"),
+                              wellPanel(
+                                style="background-color: #f9f9f9; border-color: #eee; word-wrap: break-word;",
+                                tags$p("ghoziankarami. (2025). ghoziankarami/GeoDataViz: v1.0.0 - Public Release (v1.0.0). Zenodo. ", tags$a(href="https://doi.org/10.5281/zenodo.17142676", target="_blank", "https://doi.org/10.5281/zenodo.17142676"))
                               ),
                               
                               h4("BibTeX Format:"),
                               tags$pre(
-                                "
-@misc{Karami2025GeoDataViz,
-  author = {Karami, Ghozian},
-  title = {GeoDataViz: A comprehensive workbench for geological drillhole data analysis},
-  year = {2025},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\\url{https://github.com/ghoziankarami/GeoDataViz}}
+                                "@software{ghoziankarami_2025_17142676,
+  author       = {ghoziankarami},
+  title        = {ghoziankarami/GeoDataViz: v1.0.0 - Public Release},
+  month        = sep,
+  year         = 2025,
+  publisher    = {Zenodo},
+  version      = {v1.0.0},
+  doi          = {10.5281/zenodo.17142676},
+  url          = {https://doi.org/10.5281/zenodo.17142676}
 }"
                               )
                        ),
@@ -408,15 +401,12 @@ server <- function(input, output, session) {
   
   useShinyjs()
   
-  # Reactive values store
   rv <- reactiveValues(
     litho_colors = setNames(character(0), character(0)),
     removed_outlier_indices = NULL,
     top_cut_data = NULL,
     top_cut_summary_trigger = 0
   )
-  
-  # --- PART 1: DATA READING AND PREPARATION ---
   
   collar_data_raw <- reactive({
     if (input$dataSource == "sample") {
@@ -526,10 +516,10 @@ server <- function(input, output, session) {
     req(collar_data(), input$col_collar_holeid, input$col_x, input$col_y, input$col_z)
     
     validate(
-      need(input$col_collar_holeid %in% names(collar_data()), "Collar 'Hole ID' column not found in data. Please check Column Definitions."),
-      need(input$col_x %in% names(collar_data()), "Collar 'X' column not found in data. Please check Column Definitions."),
-      need(input$col_y %in% names(collar_data()), "Collar 'Y' column not found in data. Please check Column Definitions."),
-      need(input$col_z %in% names(collar_data()), "Collar 'Z' column not found in data. Please check Column Definitions.")
+      need(input$col_collar_holeid %in% names(collar_data()), "Collar 'Hole ID' column not found in data."),
+      need(input$col_x %in% names(collar_data()), "Collar 'X' column not found in data."),
+      need(input$col_y %in% names(collar_data()), "Collar 'Y' column not found in data."),
+      need(input$col_z %in% names(collar_data()), "Collar 'Z' column not found in data.")
     )
     
     df <- collar_data() %>%
@@ -542,7 +532,7 @@ server <- function(input, output, session) {
       mutate(hole_id = as.character(hole_id))
     
     if(any(duplicated(df$hole_id))) {
-      showNotification("Warning: Duplicate Hole IDs found in your collar file. This can cause issues in data joining. Please ensure Hole IDs are unique.", type = "warning", duration = 15)
+      showNotification("Warning: Duplicate Hole IDs found in collar file.", type = "warning", duration = 15)
     }
     
     df %>% distinct(hole_id, .keep_all = TRUE)
@@ -552,9 +542,9 @@ server <- function(input, output, session) {
     req(assay_data(), input$col_assay_holeid, input$col_assay_from, input$col_assay_to)
     
     validate(
-      need(input$col_assay_holeid %in% names(assay_data()), "Assay 'Hole ID' column not found in data. Please check Column Definitions."),
-      need(input$col_assay_from %in% names(assay_data()), "Assay 'From' column not found in data. Please check Column Definitions."),
-      need(input$col_assay_to %in% names(assay_data()), "Assay 'To' column not found in data. Please check Column Definitions.")
+      need(input$col_assay_holeid %in% names(assay_data()), "Assay 'Hole ID' column not found in data."),
+      need(input$col_assay_from %in% names(assay_data()), "Assay 'From' column not found in data."),
+      need(input$col_assay_to %in% names(assay_data()), "Assay 'To' column not found in data.")
     )
     
     assay_data() %>%
@@ -571,10 +561,10 @@ server <- function(input, output, session) {
     req(litho_data(), input$col_litho_holeid, input$col_litho_from, input$col_litho_to, input$col_litho)
     
     validate(
-      need(input$col_litho_holeid %in% names(litho_data()), "Lithology 'Hole ID' column not found in data. Please check Column Definitions."),
-      need(input$col_litho_from %in% names(litho_data()), "Lithology 'From' column not found in data. Please check Column Definitions."),
-      need(input$col_litho_to %in% names(litho_data()), "Lithology 'To' column not found in data. Please check Column Definitions."),
-      need(input$col_litho %in% names(litho_data()), "Lithology 'Lithology' column not found in data. Please check Column Definitions.")
+      need(input$col_litho_holeid %in% names(litho_data()), "Lithology 'Hole ID' column not found in data."),
+      need(input$col_litho_from %in% names(litho_data()), "Lithology 'From' column not found in data."),
+      need(input$col_litho_to %in% names(litho_data()), "Lithology 'To' column not found in data."),
+      need(input$col_litho %in% names(litho_data()), "Lithology 'Lithology' column not found in data.")
     )
     
     litho_data() %>%
@@ -609,7 +599,7 @@ server <- function(input, output, session) {
   })
   
   output$combinedDataTable <- renderDT({
-    validate(need(!is.null(combinedData()) && nrow(combinedData()) > 0, "Data is being processed or failed to load. Please check file inputs and column definitions."))
+    validate(need(!is.null(combinedData()) && nrow(combinedData()) > 0, "Processing data..."))
     datatable(head(combinedData(), 100), options = list(pageLength = 10, scrollX = TRUE, scrollCollapse = TRUE))
   })
   
@@ -620,7 +610,6 @@ server <- function(input, output, session) {
       names()
   })
   
-  # --- Data Validation Logic ---
   output$fileCountsTable <- renderTable({
     req(collar_data(), assay_data(), litho_data())
     data.frame(
@@ -678,14 +667,13 @@ server <- function(input, output, session) {
     }
   })
   
-  # --- Drillhole Location Map ---
   output$mapColorSelectUI <- renderUI({
     selectInput("mapColorColumn", "Color Map by Average:", 
                 choices = c("None" = "", numeric_assay_cols()))
   })
   
   output$drillholeMap <- renderPlotly({
-    validate(need(combinedData(), "Please upload and define files to view the map."))
+    validate(need(combinedData(), "Please upload files to view the map."))
     
     plot_data <- collar_std()
     
@@ -712,15 +700,63 @@ server <- function(input, output, session) {
         )
       }
       
-      if(nrow(data_with_color) > 0){
-        p <- p %>% add_markers(
-          data = data_with_color, x = ~x_coord, y = ~y_coord,
-          type = 'scatter', mode = 'markers',
-          marker = list(size = input$markerSize, color = ~avg_grade, colorscale = input$continuous_palette, showscale = TRUE,
-                        colorbar = list(title = paste("Avg.", input$mapColorColumn))),
-          name = "With Data", text = ~paste("Hole ID:", hole_id, "<br>Avg.", input$mapColorColumn, ":", round(avg_grade, 3)),
-          hoverinfo = "text"
-        )
+      if(nrow(data_with_color) > 0) {
+        if (input$scale_type == "continuous") {
+          p <- p %>% add_markers(
+            data = data_with_color, x = ~x_coord, y = ~y_coord,
+            type = 'scatter', mode = 'markers',
+            marker = list(
+              size = input$markerSize, 
+              color = ~avg_grade, 
+              colorscale = input$continuous_palette, 
+              showscale = TRUE,
+              colorbar = list(title = paste("Avg.", input$mapColorColumn))
+            ),
+            name = "With Data", 
+            text = ~paste("Hole ID:", hole_id, "<br>Avg.", input$mapColorColumn, ":", round(avg_grade, 3)),
+            hoverinfo = "text"
+          )
+        } else {
+          req(input$manual_breaks, input$discrete_palette)
+          validate(need(input$manual_breaks != "", "Please enter interval breaks for discrete scale."))
+          
+          breaks_num <- as.numeric(trimws(unlist(strsplit(input$manual_breaks, ","))))
+          breaks_num <- sort(na.omit(breaks_num))
+          validate(need(length(breaks_num) > 0, "Please enter at least one valid number for interval breaks."))
+          
+          breaks_vec_inf <- c(-Inf, breaks_num, Inf)
+          labels <- sapply(1:(length(breaks_vec_inf)-1), function(i) {
+            if (i == 1) return(paste("<=", format(breaks_vec_inf[i+1], nsmall=2)))
+            if (i == length(breaks_vec_inf)-1) return(paste(">", format(breaks_vec_inf[i], nsmall=2)))
+            return(paste(format(breaks_vec_inf[i], nsmall=2), "-", format(breaks_vec_inf[i+1], nsmall=2)))
+          })
+          
+          data_with_color$grade_category <- cut(
+            data_with_color$avg_grade, 
+            breaks = breaks_vec_inf, 
+            labels = labels, 
+            right = FALSE, 
+            include.lowest = TRUE
+          )
+          
+          num_colors <- length(labels)
+          palette_colors <- RColorBrewer::brewer.pal(max(3, min(num_colors, 9)), input$discrete_palette)
+          if(num_colors > length(palette_colors)) {
+            palette_colors <- colorRampPalette(palette_colors)(num_colors)
+          } else {
+            palette_colors <- palette_colors[1:num_colors]
+          }
+          
+          p <- p %>% add_markers(
+            data = data_with_color, x = ~x_coord, y = ~y_coord,
+            type = 'scatter', mode = 'markers',
+            color = ~grade_category,
+            colors = palette_colors,
+            marker = list(size = input$markerSize),
+            text = ~paste("Hole ID:", hole_id, "<br>Avg.", input$mapColorColumn, ":", round(avg_grade, 3)),
+            hoverinfo = "text"
+          )
+        }
       }
       
     } else {
@@ -733,13 +769,13 @@ server <- function(input, output, session) {
       )
     }
     
-    p %>% layout(title = "Interactive Drillhole Location Map",
-                 xaxis = list(title = "X Coordinate"),
-                 yaxis = list(title = "Y Coordinate", scaleanchor = "x", scaleratio = 1),
-                 showlegend = TRUE)
+    p %>% layout(
+      title = "Interactive Drillhole Location Map",
+      xaxis = list(title = "X Coordinate"),
+      yaxis = list(title = "Y Coordinate", scaleanchor = "x", scaleratio = 1),
+      showlegend = TRUE
+    )
   })
-  
-  # --- Statistical Analysis ---
   
   observe({
     choices <- numeric_assay_cols()
@@ -755,7 +791,7 @@ server <- function(input, output, session) {
     req(combinedData(), input$selectedGrades)
     validate(
       need(length(input$selectedGrades) > 0, "Please select at least one grade."),
-      need(all(input$selectedGrades %in% names(combinedData())), "One or more selected grades are not valid. Please re-select.")
+      need(all(input$selectedGrades %in% names(combinedData())), "One or more selected grades are not valid.")
     )
     
     summary_df <- combinedData() %>%
@@ -772,7 +808,7 @@ server <- function(input, output, session) {
     req(combinedData(), input$selectedGrades)
     validate(
       need(length(input$selectedGrades) > 0, "Please select at least one grade."),
-      need(all(input$selectedGrades %in% names(combinedData())), "One or more selected grades are not valid. Please re-select.")
+      need(all(input$selectedGrades %in% names(combinedData())), "One or more selected grades are not valid.")
     )
     
     data_plot <- combinedData() %>%
@@ -924,8 +960,6 @@ server <- function(input, output, session) {
     )
   })
   
-  # --- Bivariate Analysis ---
-  
   output$bivariateXSelectUI <- renderUI({
     selectInput("bivariateX", "Select X-axis Variable:", choices = numeric_assay_cols())
   })
@@ -999,8 +1033,6 @@ server <- function(input, output, session) {
       theme_minimal()
   })
   
-  # --- Downhole Plot (Versi 14.1) ---
-  
   output$holeSelectInput <- renderUI({
     req(collar_std())
     hole_ids <- unique(collar_std()$hole_id)
@@ -1070,8 +1102,6 @@ server <- function(input, output, session) {
       layout(title = paste("Downhole Plot for", input$selectedHole),
              margin = list(t = 80))
   })
-  
-  # --- Lithology Color Settings ---
   
   observe({
     req(combinedData())
