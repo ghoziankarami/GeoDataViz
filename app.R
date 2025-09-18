@@ -1,14 +1,11 @@
 # app.R
-# Version 1.0.1: "Bug Fix Release"
+# Version 1.0.1: "Web Version"
 # Author: Ghozian Islam Karami
 #
-# Changelog v1.0.1:
-# - BUG FIX (Drillhole Map): Re-implemented and fixed the discrete color scale
-#   functionality on the drillhole location map. The feature now correctly
-#   categorizes data and displays points as expected.
-#
-# Changelog v1.0.0:
-# - OFFICIAL RELEASE: First stable, public release of GeoDataViz.
+# Changelog v1.0.1 (Web):
+# - This version is streamlined for online deployment (shinyapps.io).
+# - The "Save & Load Session" feature, intended for local use, has been removed.
+# - All other analytical and visualization features are identical to the stable public release.
 
 # --- 1. Load Libraries ---
 library(shiny)
@@ -73,7 +70,7 @@ ui <- fluidPage(
     style = "position: relative; min-height: 100vh;",
     div(style="padding-bottom: 50px;",
         navbarPage(
-          "GeoDataViz v1.0.1", 
+          "Ore-Bit v1.0.1", 
           
           # Tab 1: Data Input & Integration
           tabPanel("Data Input & Integration",
@@ -94,7 +91,7 @@ ui <- fluidPage(
                                                  "CSV (Multiple Files)" = "csv")),
                          hr(),
                          conditionalPanel(
-                           condition = "input.inputType == 'excel'",
+                           condition = "input$inputType == 'excel'",
                            fileInput("excelFile", "Upload Excel File (.xlsx)", accept = c(".xlsx")),
                            hr(),
                            h3("Select Sheets"),
@@ -103,13 +100,14 @@ ui <- fluidPage(
                            uiOutput("lithoSheetUI")
                          ),
                          conditionalPanel(
-                           condition = "input.inputType == 'csv'",
+                           condition = "input$inputType == 'csv'",
                            fileInput("collarFile", "a. Upload Collar File (.csv)", accept = ".csv"),
                            fileInput("assayFile", "b. Upload Assay File (.csv)", accept = ".csv"),
                            fileInput("lithoFile", "c. Upload Lithology File (.csv)", accept = ".csv"),
                            radioButtons("sep", "CSV Separator:", choices = c(Comma = ",", Semicolon = ";"), selected = ";")
                          )
                        )
+                       # ## Bagian Save/Load Session dihapus untuk versi web
                      ),
                      mainPanel(
                        width = 8,
@@ -343,8 +341,8 @@ ui <- fluidPage(
                    fluidPage(
                      fluidRow(
                        column(8,
-                              h3("About GeoDataViz"),
-                              p(strong("GeoDataViz"), " is a comprehensive, interactive web application built with R Shiny, designed as an all-in-one workbench for geologists, data analysts, and students. It transforms raw drillhole data into actionable geological insights through powerful visualization and robust statistical analysis."),
+                              h3("About Ore-Bit"),
+                              p(strong("Ore-Bit"), " is a comprehensive, interactive web application built with R Shiny, designed as an all-in-one workbench for geologists, data analysts, and students. It transforms raw drillhole data into actionable geological insights through powerful visualization and robust statistical analysis."),
                               p("Developed by a Senior Geologist for both educational and professional use, this application provides an open-source solution for the entire initial data analysis workflow, from data loading to advanced geostatistical QA/QC, without the need for proprietary software."),
                               hr(),
                               
@@ -353,7 +351,7 @@ ui <- fluidPage(
                               hr(),
                               
                               h3("Citation"),
-                              p("If you use GeoDataViz in your research, publication, or report, please support this open-source project by citing it. The official DOI for this software is provided by Zenodo."),
+                              p("If you use this software in your research, publication, or report, please support this open-source project by citing it. The official DOI for this software is provided by Zenodo."),
                               
                               h4("Preferred Format (Zenodo):"),
                               wellPanel(
@@ -407,6 +405,8 @@ server <- function(input, output, session) {
     top_cut_data = NULL,
     top_cut_summary_trigger = 0
   )
+  
+  # ## Logika Save/Load Session dihapus dari versi web
   
   collar_data_raw <- reactive({
     if (input$dataSource == "sample") {
