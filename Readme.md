@@ -26,13 +26,14 @@ This application is ideal for:
 -   **Data Analysts in the Mining Sector:** For rapidly prototyping analyses and generating key statistical summaries from drillhole datasets.
 
 ------------------------------------------------------------------------
+
 ## Project Versions
 
 This repository contains multiple versions of the application managed via Git branches, each serving a different purpose:
 
 -   **`main` (Local Free Version):** This is the primary, stable, open-source version intended for local use. It includes all core features, including **Save & Load Session**. This is the recommended version for most users.
 
--   **`web-version` (Live Demo):** This branch contains the code deployed to the public Shinyapps.io server. It has the **Save & Load Session** feature removed for simplicity and security in a multi-user web environment.
+-   **`web-version` (Live Demo):** This branch contains the code deployed to the public Shinyapps.io server. It has the **Save & Load Session** feature removed for simplicity and security in a multi-user web environment. GO to this link for launch the webapp: [GeodataViz Web App](https://ghoziankarami.shinyapps.io/GeodataViz/)
 
 -   **`pro-version` (Development):** This is a development branch for future premium features, such as automated PDF report generation. It may be unstable and is not intended for general use yet.
 
