@@ -1,11 +1,15 @@
 # app.R
-# Version 1.0.1: "Bug Fix Release"
+# Version 1.1.0: "Session Management Edition"
 # Author: Ghozian Islam Karami
 #
+# Changelog v1.1.0:
+# - NEW FEATURE: Implemented Save & Load Session functionality for local use.
+#   - Users can now save their entire session state (all input selections, custom
+#     colors, removed outliers) to an .rds file.
+#   - A saved .rds file can be uploaded to instantly restore a previous session.
+#
 # Changelog v1.0.1:
-# - BUG FIX (Drillhole Map): Re-implemented and fixed the discrete color scale
-#   functionality on the drillhole location map. The feature now correctly
-#   categorizes data and displays points as expected.
+# - BUG FIX (Drillhole Map): Fixed the discrete color scale functionality.
 #
 # Changelog v1.0.0:
 # - OFFICIAL RELEASE: First stable, public release of GeoDataViz.
@@ -73,7 +77,7 @@ ui <- fluidPage(
     style = "position: relative; min-height: 100vh;",
     div(style="padding-bottom: 50px;",
         navbarPage(
-          "GeoDataViz v1.0.1", 
+          "Ore-Bit v1.1.0", 
           
           # Tab 1: Data Input & Integration
           tabPanel("Data Input & Integration",
@@ -87,7 +91,7 @@ ui <- fluidPage(
                                     selected = "sample"),
                        hr(),
                        conditionalPanel(
-                         condition = "input$dataSource == 'upload'",
+                         condition = "input.dataSource == 'upload'",
                          h3("2. Upload Files"),
                          selectInput("inputType", "Select Input Format:",
                                      choices = c("Excel (Single File)" = "excel",
@@ -109,7 +113,14 @@ ui <- fluidPage(
                            fileInput("lithoFile", "c. Upload Lithology File (.csv)", accept = ".csv"),
                            radioButtons("sep", "CSV Separator:", choices = c(Comma = ",", Semicolon = ";"), selected = ";")
                          )
-                       )
+                       ),
+                       ## ## FITUR BARU: Save/Load Session UI
+                       hr(),
+                       h3("Session Management (Local Version)"),
+                       p("Save your settings or load a previous session."),
+                       downloadButton("saveSession", "Save Session (.rds)"),
+                       fileInput("loadSession", "Load Session (.rds)", accept = ".rds"),
+                       helpText("Workflow: Load your data files first, then load a session file to apply settings.")
                      ),
                      mainPanel(
                        width = 8,
@@ -158,6 +169,8 @@ ui <- fluidPage(
                      )
                    )
           ),
+          
+          # ... (Sisa UI sama persis dengan v1.0.1) ...
           
           # Data Validation Tab
           tabPanel("Data Validation Summary",
@@ -343,8 +356,8 @@ ui <- fluidPage(
                    fluidPage(
                      fluidRow(
                        column(8,
-                              h3("About GeoDataViz"),
-                              p(strong("GeoDataViz"), " is a comprehensive, interactive web application built with R Shiny, designed as an all-in-one workbench for geologists, data analysts, and students. It transforms raw drillhole data into actionable geological insights through powerful visualization and robust statistical analysis."),
+                              h3("About Ore-Bit"),
+                              p(strong("Ore-Bit"), " is a comprehensive, interactive web application built with R Shiny, designed as an all-in-one workbench for geologists, data analysts, and students. It transforms raw drillhole data into actionable geological insights through powerful visualization and robust statistical analysis."),
                               p("Developed by a Senior Geologist for both educational and professional use, this application provides an open-source solution for the entire initial data analysis workflow, from data loading to advanced geostatistical QA/QC, without the need for proprietary software."),
                               hr(),
                               
@@ -353,7 +366,7 @@ ui <- fluidPage(
                               hr(),
                               
                               h3("Citation"),
-                              p("If you use GeoDataViz in your research, publication, or report, please support this open-source project by citing it. The official DOI for this software is provided by Zenodo."),
+                              p("If you use this software in your research, publication, or report, please support this open-source project by citing it. The official DOI for this software is provided by Zenodo."),
                               
                               h4("Preferred Format (Zenodo):"),
                               wellPanel(
@@ -407,6 +420,90 @@ server <- function(input, output, session) {
     top_cut_data = NULL,
     top_cut_summary_trigger = 0
   )
+  
+  # --- (Bagian kode server lainnya sama persis, di bawah ini hanya tambahan baru) ---
+  
+  # ... (Semua kode server dari v1.0.1 ada di sini) ...
+  
+  # ## FITUR BARU: Logika Server untuk Save/Load Session
+  
+  output$saveSession <- downloadHandler(
+    filename = function() {
+      paste0("orebit-session-", Sys.Date(), ".rds")
+    },
+    content = function(file) {
+      # Hanya simpan input dan nilai reaktif, bukan data mentahnya.
+      # Pengguna harus memuat ulang file data mereka terlebih dahulu.
+      session_data <- list(
+        inputs = reactiveValuesToList(input),
+        reactives = reactiveValuesToList(rv)
+      )
+      saveRDS(session_data, file = file)
+      showNotification("Session settings saved successfully!", type = "message")
+    }
+  )
+  
+  observeEvent(input$loadSession, {
+    req(input$loadSession)
+    
+    tryCatch({
+      session_data <- readRDS(input$loadSession$datapath)
+      
+      # Restore reactive values (rv)
+      if (!is.null(session_data$reactives)) {
+        for (name in names(session_data$reactives)) {
+          rv[[name]] <- session_data$reactives[[name]]
+        }
+      }
+      
+      # Restore inputs
+      if (!is.null(session_data$inputs)) {
+        saved_inputs <- session_data$inputs
+        
+        # Daftar semua input dan fungsi update-nya
+        # Ini harus dijaga agar tetap sinkron dengan UI
+        input_map <- list(
+          select = c("dataSource", "inputType", "collar_sheet", "assay_sheet", "litho_sheet", 
+                     "col_collar_holeid", "col_x", "col_y", "col_z", 
+                     "col_assay_holeid", "col_assay_from", "col_assay_to", 
+                     "col_litho_holeid", "col_litho_from", "col_litho_to", "col_litho",
+                     "scale_type", "continuous_palette", "discrete_palette",
+                     "selectedGrades", "selectedBoxplotGrade", "mapColorColumn",
+                     "bivariateX", "bivariateY", "multivariateVars",
+                     "selectedHole", "selectedDownholeCols", "selectedLithoColor"),
+          radio = c("sep"),
+          slider = c("markerSize"),
+          text = c("manual_breaks"),
+          numeric = c("topCutValue")
+        )
+        
+        # Loop dan update setiap input
+        for (type in names(input_map)) {
+          for (id in input_map[[type]]) {
+            if (!is.null(saved_inputs[[id]])) {
+              value <- saved_inputs[[id]]
+              try({
+                switch(type,
+                       select = updateSelectInput(session, id, selected = value),
+                       radio = updateRadioButtons(session, id, selected = value),
+                       slider = updateSliderInput(session, id, value = value),
+                       text = updateTextInput(session, id, value = value),
+                       numeric = updateNumericInput(session, id, value = value)
+                )
+              }, silent = TRUE)
+            }
+          }
+        }
+      }
+      
+      showNotification("Session loaded successfully!", type = "message")
+      
+    }, error = function(e) {
+      showNotification(paste("Failed to load session:", e$message), type = "error")
+    })
+  })
+  
+  # (Kode server lainnya dari v1.0.1 ditaruh di sini, digabungkan dengan kode di atas)
   
   collar_data_raw <- reactive({
     if (input$dataSource == "sample") {
