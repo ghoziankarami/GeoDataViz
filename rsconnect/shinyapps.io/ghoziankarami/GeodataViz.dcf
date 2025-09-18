@@ -1,0 +1,12 @@
+name: GeodataViz
+title: GeoDataViz
+username: ghoziankarami
+account: ghoziankarami
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 15303578
+bundleId: 10917267
+url: https://ghoziankarami.shinyapps.io/GeodataViz/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
