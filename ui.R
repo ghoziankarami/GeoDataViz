@@ -1,18 +1,10 @@
-# ui.R (Web Version)
-# Author: Ghozian Islam Karami
-# This UI is streamlined for online deployment and excludes session management features.
-
-library(shiny)
-library(plotly)
-library(DT)
-
 ui <- fluidPage(
   useShinyjs(),
   tags$div(
     style = "position: relative; min-height: 100vh;",
     div(style="padding-bottom: 50px;",
         navbarPage(
-          "GeoDataViz v1.2.3", # Sebaiknya versi disamakan dengan 'main' untuk konsistensi
+          "GeoDataViz v1.2.3", 
           
           tabPanel("Data Input & Integration",
                    sidebarLayout(
@@ -25,14 +17,14 @@ ui <- fluidPage(
                                     selected = "sample"),
                        hr(),
                        conditionalPanel(
-                         condition = "input.dataSource == 'upload'",
+                         condition = "input$dataSource == 'upload'",
                          h3("2. Upload Files"),
                          selectInput("inputType", "Select Input Format:",
                                      choices = c("Excel (Single File)" = "excel",
                                                  "CSV (Multiple Files)" = "csv")),
                          hr(),
                          conditionalPanel(
-                           condition = "input.inputType == 'excel'",
+                           condition = "input$inputType == 'excel'",
                            fileInput("excelFile", "Upload Excel File (.xlsx)", accept = c(".xlsx")),
                            hr(),
                            h3("Select Sheets"),
@@ -41,14 +33,28 @@ ui <- fluidPage(
                            uiOutput("lithoSheetUI")
                          ),
                          conditionalPanel(
-                           condition = "input.inputType == 'csv'",
+                           condition = "input$inputType == 'csv'",
                            fileInput("collarFile", "a. Upload Collar File (.csv)", accept = ".csv"),
                            fileInput("assayFile", "b. Upload Assay File (.csv)", accept = ".csv"),
                            fileInput("lithoFile", "c. Upload Lithology File (.csv)", accept = ".csv"),
                            radioButtons("sep", "CSV Separator:", choices = c(Comma = ",", Semicolon = ";"), selected = ";")
                          )
+                       ),
+                       hr(),
+                       h3("Session Management (Local Version)"),
+                       downloadButton("saveSession", "Save Session (.rds)"),
+                       fileInput("loadSession", "Load Session (.rds)", accept = ".rds"),
+                       tags$div(
+                         class = "well",
+                         style = "background-color: #f9f9f9; border: 1px solid #e3e3e3;",
+                         h5(strong("Smart Workflow:")),
+                         tags$ol(
+                           style="padding-left: 20px;",
+                           tags$li("Load your data files (Collar, Assay, Litho)."),
+                           tags$li("Then, upload your saved `.rds` session file."),
+                           tags$li("The app will automatically restore everything, including column definitions.")
+                         )
                        )
-                       ## ## BAGIAN SESSION MANAGEMENT DIHAPUS DARI SINI
                      ),
                      mainPanel(
                        width = 8,

@@ -81,7 +81,35 @@ server <- function(input, output, session) {
   observe({ choices <- numeric_assay_cols(); updateSelectInput(session, "selectedGrades", choices = choices, selected = choices[1]) })
   observe({ req(input$selectedGrades); updateSelectInput(session, "selectedBoxplotGrade", choices = input$selectedGrades, selected = input$selectedGrades[1]) })
   
- 
+  # Session Management Logic
+  output$saveSession <- downloadHandler(
+    filename = function() { paste0("geodataviz-session-", Sys.Date(), ".rds") },
+    content = function(file) {
+      inputs_to_save <- reactiveValuesToList(input); inputs_to_save <- inputs_to_save[!grepl("File|loadSession", names(inputs_to_save))]
+      session_data <- list(inputs = inputs_to_save, reactives = reactiveValuesToList(rv)); saveRDS(session_data, file = file)
+      showNotification("Session settings saved successfully!", type = "message")
+    }
+  )
+  observeEvent(input$loadSession, {
+    req(input$loadSession)
+    tryCatch({
+      session_data <- readRDS(input$loadSession$datapath)
+      if (!is.null(session_data$reactives)) { for (name in names(session_data$reactives)) { rv[[name]] <- session_data$reactives[[name]] } }
+      shinyjs::delay(500, {
+        if (!is.null(session_data$inputs)) {
+          saved_inputs <- session_data$inputs
+          update_input <- function(type, id) { if (id %in% names(saved_inputs) && !is.null(saved_inputs[[id]])) { value <- saved_inputs[[id]]; try({ switch(type, select = updateSelectInput(session, id, selected = value), radio = updateRadioButtons(session, id, selected = value), slider = updateSliderInput(session, id, value = value), text = updateTextInput(session, id, value = value), numeric = updateNumericInput(session, id, value = value), checkbox = updateCheckboxInput(session, id, value = value)) }, silent = TRUE) } }
+          sapply(c("dataSource", "inputType", "sep"), function(id) update_input("radio", id))
+          sapply(c("col_collar_holeid", "col_x", "col_y", "col_z", "col_assay_holeid", "col_assay_from", "col_assay_to", "col_litho_holeid", "col_litho_from", "col_litho_to", "col_litho", "scale_type", "continuous_palette", "discrete_palette", "selectedGrades", "selectedBoxplotGrade", "mapColorColumn", "bivariateX", "bivariateY", "multivariateVars", "selectedHole", "selectedDownholeCols", "selectedLithoColor"), function(id) update_input("select", id))
+          sapply(c("markerSize", "histBins"), function(id) update_input("slider", id))
+          sapply(c("manual_breaks"), function(id) update_input("text", id))
+          sapply(c("topCutValue"), function(id) update_input("numeric", id))
+          sapply(c("excludeZeros", "zoomBoxplot"), function(id) update_input("checkbox", id))
+        }
+        showNotification("Session loaded successfully!", type = "message")
+      })
+    }, error = function(e) { showNotification(paste("Failed to load session:", e$message), type = "error") })
+  })
   
   # All other output renders...
   output$combinedDataTable <- renderDT({ validate(need(combinedData(), "Processing data...")); datatable(head(combinedData(), 100), options = list(pageLength = 10, scrollX = TRUE, scrollCollapse = TRUE)) })
