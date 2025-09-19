@@ -1,14 +1,9 @@
 # app.R
-# Version 1.2.4: "CSV-Only Simplification"
+# Version 1.3.0: "Universal App with Web Detection"
 # Author: Ghozian Islam Karami
 #
 # Changelog v1.2.4:
 # - SIMPLIFICATION: Removed all UI elements and logic related to Excel file uploads.
-# - UI: The data input panel now directly shows CSV file inputs as the only upload option.
-# - SERVER: Updated session loading logic to ignore Excel-related inputs.
-#
-# Changelog v1.2.3:
-# - CRITICAL BUG FIX (Force Close): Refactored bivariate regression with `nest()` and `map()`.
 
 # --- 1. Load Libraries ---
 library(shiny)
@@ -18,7 +13,6 @@ library(plotly)
 library(DT)
 library(ggplot2)
 library(rlang)
-library(readxl)
 library(janitor)
 library(shinyjs)
 library(RColorBrewer)
@@ -55,10 +49,9 @@ custom_r_squared_text <- function(data, mapping, ...) {
   ggplot() + theme_void() + annotate("text", x = mean(x_range), y = mean(y_range), label = paste("R² =", format(r_squared, digits = 2)), size = 5, ...)
 }
 
-
 # --- 3. UI Definition ---
 ui <- fluidPage(
-  useShinyjs(),
+  useShinyjs(), # Important: shinyjs must be initialized
   tags$div(
     style = "position: relative; min-height: 100vh;",
     div(style="padding-bottom: 50px;",
@@ -84,18 +77,15 @@ ui <- fluidPage(
                          radioButtons("sep", "CSV Separator:", choices = c(Comma = ",", Semicolon = ";"), selected = ";")
                        ),
                        hr(),
-                       h3("Session Management (Local Version)"),
+                       h3("Session Management"),
                        downloadButton("saveSession", "Save Session (.rds)"),
                        fileInput("loadSession", "Load Session (.rds)", accept = ".rds"),
-                       tags$div(
-                         class = "well",
-                         style = "background-color: #f9f9f9; border: 1px solid #e3e3e3;",
-                         h5(strong("Smart Workflow:")),
-                         tags$ol(
-                           style="padding-left: 20px;",
-                           tags$li("Load your data files (Collar, Assay, Litho)."),
-                           tags$li("Then, upload your saved `.rds` session file."),
-                           tags$li("The app will automatically restore everything, including column definitions.")
+                       # This is the new hidden note for the web version
+                       shinyjs::hidden(
+                         div(id = "web-version-note",
+                             style = "margin-top: 10px; padding: 10px; background-color: #fff3cd; border-radius: 5px;",
+                             p(strong("Note:"), "Save & Load features are available only in the local version."),
+                             p("To use this, please run the app on your own computer.")
                          )
                        )
                      ),
@@ -379,6 +369,20 @@ server <- function(input, output, session) {
   
   useShinyjs()
   
+  # === New Web Detection Logic ===
+  # Checks for an environment variable that shinyapps.io/Posit Connect sets.
+  is_web_version <- Sys.getenv("SHINY_PORT") != ""
+  
+  observe({
+    if (is_web_version) {
+      # If it's the web version, disable buttons and show the note.
+      shinyjs::disable("saveSession")
+      shinyjs::disable("loadSession")
+      shinyjs::show("web-version-note")
+    }
+  })
+  # ==============================
+  
   rv <- reactiveValues(
     litho_colors = setNames(character(0), character(0)),
     removed_outlier_indices = NULL
@@ -458,7 +462,7 @@ server <- function(input, output, session) {
   observe({ choices <- numeric_assay_cols(); updateSelectInput(session, "selectedGrades", choices = choices, selected = choices[1]) })
   observe({ req(input$selectedGrades); updateSelectInput(session, "selectedBoxplotGrade", choices = input$selectedGrades, selected = input$selectedGrades[1]) })
   
-  # Session Management Logic
+  # Session Management Logic (will not be used in web version but is kept for local use)
   output$saveSession <- downloadHandler(
     filename = function() { paste0("geodataviz-session-", Sys.Date(), ".rds") },
     content = function(file) {
@@ -488,8 +492,6 @@ server <- function(input, output, session) {
     }, error = function(e) { showNotification(paste("Failed to load session:", e$message), type = "error") })
   })
   
-  # ... [All other output renders remain the same] ...
-  
   output$combinedDataTable <- renderDT({ validate(need(combinedData(), "Processing data...")); datatable(head(combinedData(), 100), options = list(pageLength = 10, scrollX = TRUE, scrollCollapse = TRUE)) })
   output$fileCountsTable <- renderTable({ req(collar_data(), assay_data(), litho_data()); data.frame(File = c("Collar", "Assay", "Lithology"), Records = c(nrow(collar_data()), nrow(assay_data()), nrow(litho_data()))) })
   missing_assay_data <- reactive({ req(collar_std(), assay_std()); anti_join(collar_std(), assay_std(), by = "hole_id") })
@@ -517,8 +519,29 @@ server <- function(input, output, session) {
     req(analysisData(), input$selectedBoxplotGrade, input$histBins); p <- ggplot(analysisData(), aes(x = .data[[input$selectedBoxplotGrade]])) + geom_histogram(bins = input$histBins, fill = "skyblue", color = "black") + facet_wrap(~ lithology, scales = "free") + theme_minimal() + labs(title = paste("Distribution of", input$selectedBoxplotGrade, "by Lithology"), x = input$selectedBoxplotGrade, y = "Frequency"); ggplotly(p)
   })
   output$lithologyBoxplot <- renderPlotly({
-    req(analysisData(), input$selectedBoxplotGrade, rv$litho_colors); p <- ggplot(analysisData(), aes(x = lithology, y = .data[[input$selectedBoxplotGrade]], fill = lithology)) + geom_boxplot() + scale_fill_manual(values = rv$litho_colors) + labs(title = paste("Boxplot of", input$selectedBoxplotGrade, "by Lithology"), x = "Lithology", y = "Value") + theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
-    if (input$zoomBoxplot) { stats <- analysisData() %>% filter(!is.na(.data[[input$selectedBoxplotGrade]])) %>% summarise(Q1 = quantile(.data[[input$selectedBoxplotGrade]], 0.25, na.rm = TRUE), Q3 = quantile(.data[[input$selectedBoxplotGrade]], 0.75, na.rm = TRUE)) %>% mutate(IQR = Q3-Q1); lower_bound <- stats$Q1 - 1.5 * stats$IQR; upper_bound <- stats$Q3 + 1.5 * stats$IQR; p <- p + coord_cartesian(ylim = c(lower_bound, upper_bound)) }; ggplotly(p)
+    req(analysisData(), input$selectedBoxplotGrade, rv$litho_colors)
+    p <- ggplot(analysisData(), aes(x = lithology, y = .data[[input$selectedBoxplotGrade]], fill = lithology)) + 
+      geom_boxplot() + 
+      scale_fill_manual(values = rv$litho_colors) + 
+      labs(title = paste("Boxplot of", input$selectedBoxplotGrade, "by Lithology"), x = "Lithology", y = "Value") + 
+      theme_minimal() + 
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+    
+    if (input$zoomBoxplot) {
+      stats <- analysisData() %>%
+        filter(!is.na(.data[[input$selectedBoxplotGrade]])) %>%
+        summarise(
+          Q1 = quantile(.data[[input$selectedBoxplotGrade]], 0.25, na.rm = TRUE),
+          Q3 = quantile(.data[[input$selectedBoxplotGrade]], 0.75, na.rm = TRUE)
+        ) %>%
+        mutate(IQR = Q3 - Q1)
+      
+      lower_bound <- stats$Q1 - 1.5 * stats$IQR
+      upper_bound <- stats$Q3 + 1.5 * stats$IQR
+      p <- p + coord_cartesian(ylim = c(lower_bound, upper_bound))
+    }
+    
+    ggplotly(p)
   })
   outlier_data <- reactive({
     req(analysisData(), input$selectedBoxplotGrade); grade_col <- sym(input$selectedBoxplotGrade); stats <- analysisData() %>% filter(!is.na(!!grade_col)) %>% summarise(Q1 = quantile(!!grade_col, 0.25, na.rm = TRUE), Q3 = quantile(!!grade_col, 0.75, na.rm = TRUE)) %>% mutate(IQR = Q3 - Q1); lower_bound <- stats$Q1 - 1.5 * stats$IQR; upper_bound <- stats$Q3 + 1.5 * stats$IQR; analysisData() %>% filter((!!grade_col < lower_bound | !!grade_col > upper_bound) & !is.na(!!grade_col)) %>% select(unique_id, hole_id, from, to, lithology, !!grade_col)

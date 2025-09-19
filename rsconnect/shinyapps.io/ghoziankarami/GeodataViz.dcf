@@ -5,7 +5,7 @@ account: ghoziankarami
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 15303578
-bundleId: 10917267
+bundleId: 10925686
 url: https://ghoziankarami.shinyapps.io/GeodataViz/
 version: 1
 asMultiple: FALSE
