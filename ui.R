@@ -39,22 +39,8 @@ ui <- fluidPage(
                            fileInput("lithoFile", "c. Upload Lithology File (.csv)", accept = ".csv"),
                            radioButtons("sep", "CSV Separator:", choices = c(Comma = ",", Semicolon = ";"), selected = ";")
                          )
-                       ),
-                       hr(),
-                       h3("Session Management (Local Version)"),
-                       downloadButton("saveSession", "Save Session (.rds)"),
-                       fileInput("loadSession", "Load Session (.rds)", accept = ".rds"),
-                       tags$div(
-                         class = "well",
-                         style = "background-color: #f9f9f9; border: 1px solid #e3e3e3;",
-                         h5(strong("Smart Workflow:")),
-                         tags$ol(
-                           style="padding-left: 20px;",
-                           tags$li("Load your data files (Collar, Assay, Litho)."),
-                           tags$li("Then, upload your saved `.rds` session file."),
-                           tags$li("The app will automatically restore everything, including column definitions.")
-                         )
                        )
+                       
                      ),
                      mainPanel(
                        width = 8,
