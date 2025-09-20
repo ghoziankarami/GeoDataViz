@@ -30,7 +30,11 @@ For the complete experience, including the **Save & Load Session** feature, it i
 
 **Prerequisites:** - **R:** Install from [CRAN](https://cran.r-project.org/). - **RStudio:** Install the free Desktop version from [Posit](https://posit.co/download/rstudio-desktop/).
 
-**Steps:** 1. **Download:** Download the project files (`app.R`, `collar.csv`, `assay.csv`, `lithology.csv`) from the `main` branch of this repository. 2. **Install Packages:** Open RStudio and run the following command in the console to install all dependencies: `r     install.packages(c("shiny", "dplyr", "tidyr", "plotly", "DT", "ggplot2", "rlang", "janitor", "shinyjs", "RColorBrewer", "colourpicker", "GGally", "ggrepel", "purrr"))` 3. **Run:** Open the **`app.R`** file in RStudio and click the **"Run App"** button at the top of the script editor.
+**Steps:** 1. **Download:** Download the project files (`app.R`, `collar.csv`, `assay.csv`, `lithology.csv`) from the `main` branch of this repository.
+
+2\. **Install Packages:** Open RStudio and run the following command in the console to install all dependencies: `r     install.packages(c("shiny", "dplyr", "tidyr", "plotly", "DT", "ggplot2", "rlang", "janitor", "shinyjs", "RColorBrewer", "colourpicker", "GGally", "ggrepel", "purrr"))`
+
+3\. **Run:** Open the **`app.R`** file in RStudio and click the **"Run App"** button at the top of the script editor.
 
 ------------------------------------------------------------------------
 
